@@ -1,6 +1,6 @@
 import * as p5 from "p5";
 
-const accelerationVector = () => {
+const friction = () => {
   const p = new p5((sk) => {
     class Mover {
       constructor(x, y, m) {
@@ -15,8 +15,26 @@ const accelerationVector = () => {
         let f = p5.Vector.div(force, this.mass);
         this.acc.add(f);
       }
+      friction() {
+        let diff = p.height - (this.pos.y + this.r);
+        if (diff < 1) {
+          //direction of friction
+          let friction = this.vel.copy();
+
+          friction.normalize();
+
+          friction.mult(-1);
+          console.log("friction", this.vel, friction);
+          let mu = 0.1;
+          //N is normal force proportional to mass
+          let normal = this.mass;
+          friction.setMag(mu * normal);
+
+          this.applyForce(friction);
+        }
+      }
       edges() {
-        if (this.pos.x > p.width) {
+        if (this.pos.x > p.width-this.r) {
           this.pos.x = p.width - this.r;
           this.vel.x *= -1;
         }
@@ -24,7 +42,7 @@ const accelerationVector = () => {
           this.pos.x = this.r;
           this.vel.x *= -1;
         }
-        if (this.pos.y > p.height) {
+        if (this.pos.y > p.height - this.r) {
           this.pos.y = p.height - this.r;
           this.vel.y *= -1;
         }
@@ -51,29 +69,32 @@ const accelerationVector = () => {
     sk.setup = () => {
       sk.createCanvas(400, 400);
       moverA = new Mover(100, 200, 2);
-      moverB = new Mover(100, 200, 4);
+      moverB = new Mover(100, 200, 2);
     };
 
     sk.draw = () => {
       p.background(20);
-      let gravity = p.createVector(0, 0.2);
-      let wind = p.createVector(0.1, 0);
+      let gravity = p.createVector(0, 0.3);
+
       let weightA = p5.Vector.mult(gravity, moverA.mass);
       let weightB = p5.Vector.mult(gravity, moverB.mass);
       moverA.applyForce(weightA);
       moverB.applyForce(weightB);
       if (p.mouseIsPressed) {
+        let wind = p.createVector(0.1, 0);
         moverA.applyForce(wind);
         moverB.applyForce(wind);
       }
 
-      moverA.edges();
+      moverA.friction();
       moverA.update();
+      moverA.edges();
       moverA.show();
       moverB.edges();
+      //   moverB.friction();
       moverB.update();
       moverB.show();
     };
   });
 };
-export default accelerationVector;
+export default friction;
